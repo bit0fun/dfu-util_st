@@ -139,6 +139,7 @@ int dfu_get_status( struct dfu_if *dif, struct dfu_status *status )
     status->bState        = STATE_DFU_ERROR;
     status->iString       = 0;
 
+try_again:
     result = libusb_control_transfer( dif->dev_handle,
           /* bmRequestType */ LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
           /* bRequest      */ DFU_GETSTATUS,
@@ -147,7 +148,6 @@ int dfu_get_status( struct dfu_if *dif, struct dfu_status *status )
           /* Data          */ buffer,
           /* wLength       */ 6,
                               dfu_timeout );
-
     if( 6 == result ) {
         status->bStatus = buffer[0];
         if (dif->quirks & QUIRK_POLLTIMEOUT)
@@ -159,6 +159,10 @@ int dfu_get_status( struct dfu_if *dif, struct dfu_status *status )
         status->bState  = buffer[4];
         status->iString = buffer[5];
     }
+	else if( result == -9){
+		goto try_again;
+
+	}
 
     return result;
 }
